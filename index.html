@@ -1,0 +1,1987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpinEarn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --primary-color-darker: #0056b3;
+            --primary-color-lighter: #cce5ff;
+            --surface-color: #ffffff;
+            --dark-color: #2c3e50;
+            --text-color-on-dark: #ecf0f1;
+            --text-color-on-light: #34495e;
+            --border-color: #e9ecef;
+            --light-gray-color: #f8f9fa;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107; /* Yellow/Orange for scratch */
+            --info-color: #17a2b8;
+
+            --font-family: 'Inter', sans-serif;
+            --header-height-mobile: 60px;
+            --sidebar-width-desktop: 260px;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--light-gray-color);
+            color: var(--text-color-on-light);
+            line-height: 1.6;
+            overflow-x: hidden; /* Prevent horizontal scroll with sidebar */
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background-color: var(--surface-color);
+            color: var(--text-color-on-light);
+            padding: 0 15px;
+            height: var(--header-height-mobile);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .app-logo-mobile {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-color-on-light);
+        }
+        .user-profile i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+        .user-greeting {
+            display: none; /* Hidden by default, shown on wider screens */
+            font-size: 0.9rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--dark-color);
+            color: var(--text-color-on-dark);
+            width: 280px;
+            position: fixed;
+            top: 0;
+            left: -280px; /* Initially hidden */
+            height: 100%;
+            z-index: 1001;
+            transition: left 0.3s ease-in-out;
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+        .sidebar.open {
+            left: 0;
+        }
+        .sidebar-header {
+            padding: 10px 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .sidebar-logo-desktop {
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            display: none; /* Shown in desktop sidebar */
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+        }
+        .sidebar nav a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--text-color-on-dark);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+        }
+        .sidebar nav a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+            color: var(--primary-color-lighter);
+        }
+        .sidebar nav a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar nav a.active {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+            border-left: 4px solid var(--primary-color-lighter);
+            padding-left: 16px; /* Adjust for border */
+        }
+        .sidebar nav a.active i {
+            color: var(--surface-color);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000; /* Below sidebar, above content */
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            padding-top: var(--header-height-mobile);
+            padding-left: 15px;
+            padding-right: 15px;
+            padding-bottom: 20px;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .page-content {
+            display: none; /* Hidden by default */
+            padding-top: 20px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .page-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-color-on-light);
+            margin-bottom: 20px;
+        }
+
+        /* Card styles */
+        .card {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        /* Auth Pages (Login/Register) */
+        .auth-page {
+            max-width: 450px;
+            margin: 20px auto;
+        }
+        .auth-page h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--primary-color);
+        }
+        .auth-page .form-group {
+            margin-bottom: 20px;
+        }
+        .auth-page label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .auth-page input[type="text"],
+        .auth-page input[type="password"],
+        .auth-page input[type="email"],
+        .auth-page input[type="number"],
+        .auth-page select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+        }
+        .auth-page input:focus, .auth-page select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        .auth-page .form-hint {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .auth-page .switch-auth-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .auth-page .switch-auth-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .auth-page .switch-auth-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-color-darker);
+        }
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        .btn i {
+            margin-right: 8px;
+        }
+        .btn.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+        .btn .spinner {
+            display: none;
+            width: 1em;
+            height: 1em;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .btn.loading .spinner {
+            display: inline-block;
+        }
+        .btn:disabled {
+            background-color: #adb5bd;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { background-color: #1e7e34; }
+        .btn-danger { background-color: var(--error-color); color: white; }
+        .btn-danger:hover { background-color: #b21f2d; }
+        .btn-warning { background-color: var(--warning-color); color: var(--text-color-on-light); }
+        .btn-warning:hover { background-color: #d39e00; }
+        .btn-info { background-color: var(--info-color); color: white; }
+        .btn-info:hover { background-color: #117a8b; }
+
+
+        /* Messages */
+        .message-box {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+
+        /* Dashboard */
+        #dashboard-content .welcome-message {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .stats-panel {
+            display: grid;
+            gap: 15px;
+            grid-template-columns: 1fr; /* Mobile */
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+        }
+        .stat-card .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+        .stat-card .stat-info h4 {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+        .stat-card .stat-info p {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .spin-action-card { text-align: center; }
+
+        .feature-grid {
+            display: grid;
+            gap: 15px;
+            grid-template-columns: 1fr; /* Mobile */
+            margin-bottom: 20px;
+        }
+        .feature-card {
+            text-align: center;
+        }
+        .feature-card .icon-square {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 2rem;
+            color: white;
+        }
+        .feature-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+            min-height: 50px; /* Ensure cards have similar height */
+        }
+
+        .activity-log .activity-list {
+            list-style: none;
+        }
+        .activity-log .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .activity-log .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-log .icon-circle {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        .activity-log .activity-details p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        .activity-log .activity-details .timestamp {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .activity-log .view-all-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        /* Spin Wheel */
+        .spin-wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .wheel-area {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+        }
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 5px solid var(--dark-color);
+            position: relative;
+            overflow: hidden;
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1); /* Spin animation */
+        }
+        .wheel-segment {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+            transform-origin: 0 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--dark-color);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding-right: 20px; /* Adjust for text positioning */
+        }
+        .wheel-pointer {
+            position: absolute;
+            left: -15px; /* Positioned on the left */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+            border-right: 30px solid var(--error-color);
+            z-index: 2;
+        }
+         .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background-color: var(--dark-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 5px solid var(--surface-color);
+            z-index: 1;
+        }
+        #spin-result, #slots-result, #scratch-status {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 1.5em;
+        }
+
+        /* Slot Machine */
+        .slots-container { text-align: center; }
+        .slots-info { margin-bottom: 15px; }
+        .slots-reels {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            background: var(--dark-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 5px solid #444;
+            margin-bottom: 20px;
+            overflow: hidden; /* This is important */
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .reel {
+            width: 70px; /* Width of one reel */
+            height: 210px; /* Height to show 3 symbols (70px each) */
+            background-color: var(--surface-color);
+            border: 2px solid #666;
+            overflow: hidden;
+            position: relative;
+        }
+        .reel-symbols-strip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: top 0.3s ease-out; /* For quick stop, real spin animation is faster */
+        }
+        .reel-symbol {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .reel-symbol:last-child { border-bottom: none; }
+
+
+        /* Scratch Cards */
+        .scratch-card-container { text-align: center; }
+        .scratch-card-info { margin-bottom: 15px; }
+        .scratch-card-area {
+            width: 250px;
+            height: 150px;
+            background-color: var(--primary-color-lighter);
+            border: 2px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            margin: 15px auto;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* To contain overlay and result */
+        }
+        .scratch-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #bdc3c7, #a1a8ad);
+            color: var(--dark-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: opacity 0.5s ease-out;
+            z-index: 1;
+        }
+        .scratch-overlay.scratched {
+            opacity: 0;
+            pointer-events: none; /* Allow clicks on underlying content if needed */
+        }
+        .scratch-result-display { /* Renamed from scratch-result to avoid conflict */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            z-index: 0; /* Below overlay */
+        }
+
+
+        /* Placeholder Page Style (Daily Bonus, Refer & Earn, Profile) */
+        .placeholder-page {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .placeholder-page .placeholder-icon {
+            font-size: 5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .placeholder-page h2 {
+            margin-bottom: 15px;
+        }
+        .placeholder-page p {
+            color: #6c757d;
+            margin-bottom: 20px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #referral-code {
+            background-color: var(--primary-color-lighter);
+            color: var(--primary-color-darker);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 1px dashed var(--primary-color);
+        }
+        #copy-status, #daily-bonus-status, #withdraw-error-message, #withdraw-success-message {
+            margin-top: 15px;
+            min-height: 1.2em;
+        }
+
+        /* Redeem Page */
+        #redeem-points-balance {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        #withdraw-form .form-group { margin-bottom: 15px; }
+        #withdraw-form label { display: block; margin-bottom: 5px; font-weight: 500; }
+        #withdraw-form input, #withdraw-form select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+        .warning-text { color: var(--warning-color); font-size: 0.9em; font-weight: bold; }
+
+
+        /* History Page */
+        #history-content .description {
+            margin-bottom: 20px;
+            color: #6c757d;
+        }
+        #full-activity-list {
+            list-style: none;
+            /* Uses .activity-log styles */
+        }
+
+
+        /* Profile Page */
+        .profile-info p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .profile-info strong {
+            color: var(--primary-color);
+        }
+
+
+        /* Responsive Adjustments */
+        @media (min-width: 768px) { /* Tablet */
+            .user-greeting { display: inline; }
+            .stats-panel { grid-template-columns: repeat(2, 1fr); }
+            .feature-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (min-width: 992px) { /* Desktop */
+            .app-header { /* Becomes top-right header */
+                left: var(--sidebar-width-desktop);
+                width: calc(100% - var(--sidebar-width-desktop));
+                justify-content: flex-end; /* Only profile icon and greeting */
+                padding-right: 30px;
+            }
+            .menu-toggle, .app-logo-mobile { display: none; }
+
+            .sidebar {
+                left: 0;
+                width: var(--sidebar-width-desktop);
+                padding-top: 0; /* Reset padding for desktop look */
+            }
+            .sidebar-logo-desktop { display: block; margin-bottom: 20px;}
+            .sidebar.open { /* No change needed for desktop, it's always "open" */ }
+            .overlay.active { display: none; } /* No overlay on desktop */
+
+            .main-content {
+                margin-left: var(--sidebar-width-desktop);
+                padding-top: var(--header-height-mobile); /* Below desktop header */
+                padding-left: 30px;
+                padding-right: 30px;
+            }
+            .stats-panel { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (min-width: 1200px) { /* Large Desktop */
+             .feature-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+
+    <header class="app-header">
+        <button class="menu-toggle" id="menuToggleBtn" aria-label="Toggle menu">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="app-logo-mobile">SpinEarn</div>
+        <div class="user-profile">
+            <span class="user-greeting" id="userGreeting">Hi, Guest!</span>
+            <i class="fas fa-user-circle"></i>
+        </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo-desktop">SpinEarn</div>
+        </div>
+        <nav>
+            <ul id="sidebarNav">
+                <!-- Logged Out Links -->
+                <li class="nav-item-logged-out"><a href="#login" data-page="login-content"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                <li class="nav-item-logged-out"><a href="#register" data-page="register-content"><i class="fas fa-user-plus"></i> Register</a></li>
+
+                <!-- Logged In Links -->
+                <li class="nav-item-logged-in" style="display:none;"><a href="#dashboard" data-page="dashboard-content"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#spin-wheel" data-page="spin-wheel-content"><i class="fas fa-dharmachakra"></i> Spin Wheel</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#slot-machine" data-page="slot-machine-content"><i class="fas fa-dice-three"></i> Slot Machine</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#scratch-cards" data-page="scratch-cards-content"><i class="fas fa-hand-sparkles"></i> Scratch Cards</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#daily-bonus" data-page="daily-bonus-content"><i class="fas fa-calendar-check"></i> Daily Bonus</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#refer-earn" data-page="refer-earn-content"><i class="fas fa-user-plus"></i> Refer & Earn</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#redeem" data-page="redeem-content"><i class="fas fa-gift"></i> Redeem Points</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#history" data-page="history-content"><i class="fas fa-history"></i> History</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#profile" data-page="profile-content"><i class="fas fa-user-cog"></i> Profile</a></li>
+                <li class="nav-item-logged-in" style="display:none;"><a href="#logout" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <!-- Login Page -->
+        <div id="login-content" class="page-content auth-page card">
+            <h2 class="page-title">Login</h2>
+            <form id="loginForm">
+                <div id="login-error-message" class="message-box error-message" style="display:none;"></div>
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="loginButton">Login <span class="spinner"></span></button>
+            </form>
+            <p class="switch-auth-link">Don't have an account? <a href="#register" data-page="register-content">Register here</a>.</p>
+        </div>
+
+        <!-- Register Page -->
+        <div id="register-content" class="page-content auth-page card">
+            <h2 class="page-title">Register</h2>
+            <form id="registerForm">
+                <div id="register-error-message" class="message-box error-message" style="display:none;"></div>
+                <div id="register-success-message" class="message-box success-message" style="display:none;"></div>
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" required minlength="3" pattern="^[a-zA-Z0-9_]+$">
+                    <p class="form-hint">Min 3 characters, letters, numbers, and underscores only.</p>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" required minlength="6">
+                    <p class="form-hint">Min 6 characters.</p>
+                </div>
+                <div class="form-group">
+                    <label for="registerConfirmPassword">Confirm Password</label>
+                    <input type="password" id="registerConfirmPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="registerButton">Register <span class="spinner"></span></button>
+            </form>
+            <p class="switch-auth-link">Already have an account? <a href="#login" data-page="login-content">Login here</a>.</p>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-content" class="page-content">
+            <h2 class="page-title welcome-message" id="dashboardWelcomeMessage">Welcome Back!</h2>
+            
+            <div class="stats-panel" id="statsPanel">
+                <div class="stat-card card">
+                    <div class="icon-circle" style="background-color: var(--success-color);"><i class="fas fa-coins"></i></div>
+                    <div class="stat-info"><h4>Balance</h4><p id="statBalance">--- pts</p></div>
+                </div>
+                <div class="stat-card card">
+                    <div class="icon-circle" style="background-color: var(--primary-color);"><i class="fas fa-dharmachakra"></i></div>
+                    <div class="stat-info"><h4>Spins Left</h4><p id="statSpinsLeft">---</p></div>
+                </div>
+                <div class="stat-card card">
+                    <div class="icon-circle" style="background-color: var(--error-color);"><i class="fas fa-dice-three"></i></div>
+                    <div class="stat-info"><h4>Slot Tokens</h4><p id="statSlotTokens">---</p></div>
+                </div>
+                <div class="stat-card card">
+                    <div class="icon-circle" style="background-color: var(--warning-color);"><i class="fas fa-hand-sparkles"></i></div>
+                    <div class="stat-info"><h4>Scratch Cards</h4><p id="statScratchCards">---</p></div>
+                </div>
+            </div>
+
+            <div class="card spin-action-card">
+                <h3>Ready for some fun?</h3>
+                <p>Try your luck on the Spin Wheel and win exciting prizes!</p>
+                <a href="#spin-wheel" data-page="spin-wheel-content" class="btn btn-success btn-lg mt-2"><i class="fas fa-play-circle"></i> Go to Spin Wheel</a>
+            </div>
+
+            <h3 class="page-title" style="margin-top: 30px;">Explore Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card card">
+                    <div class="icon-square" style="background-color: var(--primary-color);"><i class="fas fa-calendar-check"></i></div>
+                    <h4>Daily Bonus</h4>
+                    <p>Claim your free daily bonus points. Don't miss out!</p>
+                    <a href="#daily-bonus" data-page="daily-bonus-content" class="btn btn-primary">Go to Daily Bonus</a>
+                </div>
+                <div class="feature-card card">
+                    <div class="icon-square" style="background-color: var(--info-color);"><i class="fas fa-user-plus"></i></div>
+                    <h4>Refer & Earn</h4>
+                    <p>Invite friends and earn rewards when they join.</p>
+                    <a href="#refer-earn" data-page="refer-earn-content" class="btn btn-info">Refer Friends</a>
+                </div>
+                 <div class="feature-card card">
+                    <div class="icon-square" style="background-color: var(--error-color);"><i class="fas fa-dice-three"></i></div>
+                    <h4>Slot Machine</h4>
+                    <p>Spin the reels and match symbols for big wins.</p>
+                    <a href="#slot-machine" data-page="slot-machine-content" class="btn btn-danger">Play Slots</a>
+                </div>
+                <div class="feature-card card">
+                    <div class="icon-square" style="background-color: var(--warning-color);"><i class="fas fa-hand-sparkles"></i></div>
+                    <h4>Scratch Cards</h4>
+                    <p>Scratch and reveal hidden prizes instantly.</p>
+                    <a href="#scratch-cards" data-page="scratch-cards-content" class="btn btn-warning">Scratch Now</a>
+                </div>
+            </div>
+
+            <div class="card activity-log">
+                <h3 class="page-title">Recent Activity</h3>
+                <ul class="activity-list" id="dashboardActivityLog">
+                    <!-- Activity items will be populated by JS -->
+                </ul>
+                <a href="#history" data-page="history-content" class="view-all-link">View All Activity <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+
+        <!-- Spin Wheel Page -->
+        <div id="spin-wheel-content" class="page-content card">
+            <h2 class="page-title">Spin the Wheel!</h2>
+            <div class="spin-wheel-container">
+                <div class="wheel-area">
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel" id="spinWheel">
+                        <!-- Segments generated by JS -->
+                    </div>
+                    <div class="wheel-center"></div>
+                </div>
+                <p>Spins Left: <span id="spinWheelSpinsLeft">--</span></p>
+                <button id="spinNowButton" class="btn btn-success btn-lg mt-3">Spin Now <span class="spinner"></span></button>
+                <p id="spin-result" class="mt-3"></p>
+            </div>
+        </div>
+
+        <!-- Slot Machine Page -->
+        <div id="slot-machine-content" class="page-content card">
+            <h2 class="page-title">Slot Machine</h2>
+            <div class="slots-container">
+                <p class="slots-info">Cost: 1 Token | Your Tokens: <span id="slotMachineTokens">--</span></p>
+                <div class="slots-reels">
+                    <div class="reel"><div class="reel-symbols-strip" id="reel1"></div></div>
+                    <div class="reel"><div class="reel-symbols-strip" id="reel2"></div></div>
+                    <div class="reel"><div class="reel-symbols-strip" id="reel3"></div></div>
+                </div>
+                <button id="playSlotsButton" class="btn btn-danger btn-lg">Play (1 Token) <span class="spinner"></span></button>
+                <p id="slots-result" class="mt-3"></p>
+            </div>
+        </div>
+
+        <!-- Scratch Cards Page -->
+        <div id="scratch-cards-content" class="page-content card">
+            <h2 class="page-title">Scratch & Win</h2>
+            <div class="scratch-card-container">
+                <p class="scratch-card-info">Cards Left Today: <span id="scratchCardsLeft">--</span></p>
+                <div class="scratch-card-area" id="scratchCardArea">
+                    <div class="scratch-overlay" id="scratchCardOverlay">
+                        <i class="fas fa-hand-pointer fa-2x mb-2"></i>
+                        Click to Scratch!
+                    </div>
+                    <div class="scratch-result-display" id="scratchCardResultDisplay">?</div>
+                </div>
+                <button id="scratchCardButton" class="btn btn-warning btn-lg mt-3">Scratch Card <span class="spinner"></span></button>
+                <p id="scratch-status" class="mt-3">Click the card above or the button to scratch!</p>
+            </div>
+        </div>
+
+        <!-- Daily Bonus Page -->
+        <div id="daily-bonus-content" class="page-content card placeholder-page">
+            <i class="fas fa-calendar-check placeholder-icon"></i>
+            <h2 class="page-title">Daily Bonus</h2>
+            <p id="daily-bonus-message">Check your eligibility for today's bonus.</p>
+            <button id="claimDailyBonusButton" class="btn btn-primary btn-lg">Claim Today's Bonus <span class="spinner"></span></button>
+            <p id="daily-bonus-status" class="mt-3"></p>
+        </div>
+
+        <!-- Refer & Earn Page -->
+        <div id="refer-earn-content" class="page-content card placeholder-page">
+            <i class="fas fa-user-plus placeholder-icon"></i>
+            <h2 class="page-title">Refer & Earn</h2>
+            <p>Share your unique referral code with friends. When they sign up, you both get rewarded! (Simulated)</p>
+            <p>Your Referral Code:</p>
+            <div id="referral-code">------</div>
+            <button id="copyReferralCodeButton" class="btn btn-info"><i class="fas fa-copy"></i> Copy Code</button>
+            <p id="copy-status" class="mt-2"></p>
+            <p class="mt-3"><small>Note: Referral tracking is a simulation in this demo.</small></p>
+        </div>
+
+        <!-- Redeem Points Page -->
+        <div id="redeem-content" class="page-content card">
+            <h2 class="page-title">Redeem Points (Withdrawal Simulation)</h2>
+            <p>Your current balance: <strong id="redeem-points-balance">--- pts</strong></p>
+            
+            <form id="withdraw-form" class="mt-3">
+                <div id="withdraw-error-message" class="message-box error-message" style="display:none;"></div>
+                <div id="withdraw-success-message" class="message-box success-message" style="display:none;"></div>
+
+                <div class="form-group">
+                    <label for="withdrawAmount">Amount (Points)</label>
+                    <input type="number" id="withdrawAmount" min="100" required placeholder="Min 100 points">
+                </div>
+                <div class="form-group">
+                    <label for="withdrawMethod">Withdrawal Method</label>
+                    <select id="withdrawMethod" required>
+                        <option value="">-- Select Method --</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="voucher">Gift Voucher</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="withdrawDetails">Details (e.g., PayPal Email, Account Number)</label>
+                    <input type="text" id="withdrawDetails" required placeholder="Enter details here">
+                    <p class="form-hint warning-text"><i class="fas fa-exclamation-triangle"></i> Do NOT enter real financial information. This is a simulation.</p>
+                </div>
+                <button type="submit" id="requestWithdrawalButton" class="btn btn-primary btn-block">Request Withdrawal <span class="spinner"></span></button>
+            </form>
+        </div>
+
+        <!-- History Page -->
+        <div id="history-content" class="page-content card">
+            <h2 class="page-title">Activity History</h2>
+            <p class="description">Here's a log of all your recent activities on SpinEarn.</p>
+            <div class="activity-log">
+                <ul id="full-activity-list" class="activity-list">
+                    <!-- Full activity list populated by JS -->
+                     <p id="noHistoryMessage" style="display:none; text-align:center; padding: 20px; color: #6c757d;">No activity yet.</p>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile-content" class="page-content card placeholder-page">
+            <i class="fas fa-user-edit placeholder-icon"></i>
+            <h2 class="page-title">Profile</h2>
+            <div class="profile-info">
+                <p>Username: <strong id="profileUsername">---</strong></p>
+                <p>Member Since: <strong id="profileMemberSince">---</strong></p>
+            </div>
+            <button class="btn btn-secondary mt-3" disabled><i class="fas fa-key"></i> Change Password (Not Implemented)</button>
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Globals & State ---
+            let isLoggedIn = false;
+            let currentUser = null;
+            let users = JSON.parse(localStorage.getItem('spinEarnUsers')) || {}; // { username: { password, data } }
+            
+            const spinWheelSegmentsData = [
+                { label: "10 Pts", value: 10, color: "#FFC107" }, { label: "Try Again", value: 0, color: "#F44336" },
+                { label: "50 Pts", value: 50, color: "#4CAF50" }, { label: "Bonus Spin", value: "bonus_spin", color: "#2196F3" },
+                { label: "20 Pts", value: 20, color: "#FF9800" }, { label: "No Luck", value: 0, color: "#E91E63" },
+                { label: "100 Pts", value: 100, color: "#00BCD4" }, { label: "5 Pts", value: 5, color: "#FFEB3B" },
+            ];
+            const slotSymbols = ['🍒', '🍋', '🍊', '🍉', '⭐', '７', '🔔'];
+            let isSpinningWheel = false;
+            let isSpinningSlots = false;
+            let isScratchingCard = false;
+
+
+            // --- DOM Elements ---
+            const menuToggleBtn = document.getElementById('menuToggleBtn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.overlay');
+            const pageContents = document.querySelectorAll('.page-content');
+            const sidebarNav = document.getElementById('sidebarNav');
+            const userGreeting = document.getElementById('userGreeting');
+
+            // Auth forms
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginErrorMsg = document.getElementById('login-error-message');
+            const registerErrorMsg = document.getElementById('register-error-message');
+            const registerSuccessMsg = document.getElementById('register-success-message');
+            const loginButton = document.getElementById('loginButton');
+            const registerButton = document.getElementById('registerButton');
+
+            // Dashboard elements
+            const dashboardWelcomeMessage = document.getElementById('dashboardWelcomeMessage');
+            const statBalance = document.getElementById('statBalance');
+            const statSpinsLeft = document.getElementById('statSpinsLeft');
+            const statSlotTokens = document.getElementById('statSlotTokens');
+            const statScratchCards = document.getElementById('statScratchCards');
+            const dashboardActivityLog = document.getElementById('dashboardActivityLog');
+
+            // Spin Wheel elements
+            const spinWheel = document.getElementById('spinWheel');
+            const spinWheelSpinsLeft = document.getElementById('spinWheelSpinsLeft');
+            const spinNowButton = document.getElementById('spinNowButton');
+            const spinResult = document.getElementById('spin-result');
+
+            // Slot Machine elements
+            const slotMachineTokens = document.getElementById('slotMachineTokens');
+            const reel1 = document.getElementById('reel1');
+            const reel2 = document.getElementById('reel2');
+            const reel3 = document.getElementById('reel3');
+            const playSlotsButton = document.getElementById('playSlotsButton');
+            const slotsResult = document.getElementById('slots-result');
+
+            // Scratch Card elements
+            const scratchCardsLeft = document.getElementById('scratchCardsLeft');
+            const scratchCardArea = document.getElementById('scratchCardArea');
+            const scratchCardOverlay = document.getElementById('scratchCardOverlay');
+            const scratchCardResultDisplay = document.getElementById('scratchCardResultDisplay');
+            const scratchCardButton = document.getElementById('scratchCardButton');
+            const scratchStatus = document.getElementById('scratch-status');
+            
+            // Daily Bonus elements
+            const dailyBonusMessage = document.getElementById('daily-bonus-message');
+            const claimDailyBonusButton = document.getElementById('claimDailyBonusButton');
+            const dailyBonusStatus = document.getElementById('daily-bonus-status');
+
+            // Refer & Earn elements
+            const referralCodeDisplay = document.getElementById('referral-code');
+            const copyReferralCodeButton = document.getElementById('copyReferralCodeButton');
+            const copyStatus = document.getElementById('copy-status');
+
+            // Redeem Points elements
+            const redeemPointsBalance = document.getElementById('redeem-points-balance');
+            const withdrawForm = document.getElementById('withdraw-form');
+            const withdrawAmountInput = document.getElementById('withdrawAmount');
+            const withdrawMethodSelect = document.getElementById('withdrawMethod');
+            const withdrawDetailsInput = document.getElementById('withdrawDetails');
+            const requestWithdrawalButton = document.getElementById('requestWithdrawalButton');
+            const withdrawErrorMsg = document.getElementById('withdraw-error-message');
+            const withdrawSuccessMsg = document.getElementById('withdraw-success-message');
+            
+            // History elements
+            const fullActivityList = document.getElementById('full-activity-list');
+            const noHistoryMessage = document.getElementById('noHistoryMessage');
+
+            // Profile elements
+            const profileUsername = document.getElementById('profileUsername');
+            const profileMemberSince = document.getElementById('profileMemberSince');
+
+            // --- Helper Functions ---
+            function showMessage(element, message, isError = true) {
+                element.textContent = message;
+                element.className = `message-box ${isError ? 'error-message' : 'success-message'}`;
+                element.style.display = 'block';
+            }
+
+            function hideMessage(element) {
+                element.style.display = 'none';
+                element.textContent = '';
+            }
+            
+            function setButtonLoading(button, isLoading) {
+                if (isLoading) {
+                    button.classList.add('loading');
+                    button.disabled = true;
+                } else {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+            }
+
+            function formatTimeAgo(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                const now = new Date();
+                const seconds = Math.round((now - date) / 1000);
+                const minutes = Math.round(seconds / 60);
+                const hours = Math.round(minutes / 60);
+                const days = Math.round(hours / 24);
+
+                if (seconds < 60) return 'just now';
+                if (minutes < 60) return `${minutes} min ago`;
+                if (hours < 24) return `${hours} hr ago`;
+                if (days === 1) return 'yesterday';
+                return `${days} days ago`;
+            }
+
+            function generateRandomString(length = 8) {
+                return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
+            }
+
+            function saveUsers() {
+                localStorage.setItem('spinEarnUsers', JSON.stringify(users));
+            }
+            
+            function addActivity(description, type = 'generic', pointsChange = 0, value = null) {
+                if (!currentUser) return;
+
+                const activity = {
+                    description: description,
+                    type: type, // e.g., 'spin_win', 'bonus_claim', 'login', 'slot_win'
+                    timestamp: new Date().toISOString(),
+                    pointsChange: pointsChange,
+                    value: value // Optional value, e.g., prize from spin
+                };
+                currentUser.data.activityLog.unshift(activity); // Add to beginning
+                if (currentUser.data.activityLog.length > 50) { // Keep log size manageable
+                    currentUser.data.activityLog.pop();
+                }
+                updateUserData(currentUser.username, currentUser.data);
+                renderDashboardActivityLog(); // Update dashboard log immediately
+                if (document.getElementById('history-content').classList.contains('active')) {
+                    renderHistoryPage(); // If history page is active, re-render
+                }
+            }
+
+
+            // --- UI Update Functions ---
+            function updateUIBasedOnLoginState() {
+                const loggedInItems = document.querySelectorAll('.nav-item-logged-in');
+                const loggedOutItems = document.querySelectorAll('.nav-item-logged-out');
+
+                if (isLoggedIn && currentUser) {
+                    loggedInItems.forEach(item => item.style.display = 'block');
+                    loggedOutItems.forEach(item => item.style.display = 'none');
+                    userGreeting.textContent = `Hi, ${currentUser.username}!`;
+                    updateUserStatsDisplay();
+                } else {
+                    loggedInItems.forEach(item => item.style.display = 'none');
+                    loggedOutItems.forEach(item => item.style.display = 'block');
+                    userGreeting.textContent = 'Hi, Guest!';
+                    // Clear stats on logout
+                    statBalance.textContent = '--- pts';
+                    statSpinsLeft.textContent = '---';
+                    statSlotTokens.textContent = '---';
+                    statScratchCards.textContent = '---';
+                }
+            }
+
+            function updateUserStatsDisplay() {
+                if (!currentUser) return;
+                statBalance.textContent = `${currentUser.data.points.toLocaleString()} pts`;
+                statSpinsLeft.textContent = currentUser.data.spinsLeft;
+                statSlotTokens.textContent = currentUser.data.slotTokens;
+                statScratchCards.textContent = currentUser.data.scratchCardsLeft;
+
+                // Update other specific page displays if needed
+                if (document.getElementById('spin-wheel-content').classList.contains('active')) {
+                    spinWheelSpinsLeft.textContent = currentUser.data.spinsLeft;
+                    spinNowButton.disabled = isSpinningWheel || currentUser.data.spinsLeft <= 0;
+                }
+                if (document.getElementById('slot-machine-content').classList.contains('active')) {
+                    slotMachineTokens.textContent = currentUser.data.slotTokens;
+                    playSlotsButton.disabled = isSpinningSlots || currentUser.data.slotTokens <= 0;
+                }
+                if (document.getElementById('scratch-cards-content').classList.contains('active')) {
+                    scratchCardsLeft.textContent = currentUser.data.scratchCardsLeft;
+                    scratchCardButton.disabled = isScratchingCard || currentUser.data.scratchCardsLeft <= 0;
+                    scratchCardArea.style.pointerEvents = currentUser.data.scratchCardsLeft <= 0 || isScratchingCard ? 'none' : 'auto';
+
+                }
+                if (document.getElementById('redeem-content').classList.contains('active')) {
+                    redeemPointsBalance.textContent = `${currentUser.data.points.toLocaleString()} pts`;
+                }
+            }
+
+            function renderDashboard() {
+                if (!currentUser) return;
+                dashboardWelcomeMessage.textContent = `Welcome Back, ${currentUser.username}!`;
+                updateUserStatsDisplay();
+                renderDashboardActivityLog();
+            }
+
+            function renderDashboardActivityLog() {
+                if (!currentUser) {
+                    dashboardActivityLog.innerHTML = '<li>Login to see your activity.</li>';
+                    return;
+                }
+                const activities = currentUser.data.activityLog.slice(0, 5);
+                if (activities.length === 0) {
+                    dashboardActivityLog.innerHTML = '<li style="text-align:center; color: #6c757d; padding: 10px 0;">No recent activity.</li>';
+                    return;
+                }
+                dashboardActivityLog.innerHTML = activities.map(activity => `
+                    <li class="activity-item">
+                        <div class="icon-circle" style="background-color: ${getActivityIconColor(activity.type)};">
+                            <i class="fas ${getActivityIcon(activity.type)}"></i>
+                        </div>
+                        <div class="activity-details">
+                            <p>${activity.description}</p>
+                            <span class="timestamp">${formatTimeAgo(activity.timestamp)}</span>
+                        </div>
+                    </li>
+                `).join('');
+            }
+            
+            function getActivityIcon(type) {
+                switch (type) {
+                    case 'login': return 'fa-sign-in-alt';
+                    case 'register': return 'fa-user-plus';
+                    case 'spin_win': case 'spin_bonus': return 'fa-dharmachakra';
+                    case 'slot_win': return 'fa-dice-three';
+                    case 'scratch_win': return 'fa-hand-sparkles';
+                    case 'daily_bonus': return 'fa-calendar-check';
+                    case 'redeem_request': return 'fa-gift';
+                    case 'referral_signup': return 'fa-users'; // Example for referral
+                    default: return 'fa-info-circle';
+                }
+            }
+
+            function getActivityIconColor(type) {
+                 switch (type) {
+                    case 'login': case 'register': return 'var(--info-color)';
+                    case 'spin_win': case 'spin_bonus': return 'var(--primary-color)';
+                    case 'slot_win': return 'var(--error-color)';
+                    case 'scratch_win': return 'var(--warning-color)';
+                    case 'daily_bonus': return 'var(--success-color)';
+                    case 'redeem_request': return '#6f42c1'; // Purple
+                    default: return '#6c757d'; // Gray
+                }
+            }
+
+
+            // --- Navigation ---
+            function showPage(pageId, skipHistory = false) {
+                pageContents.forEach(page => {
+                    if (page.id === pageId) {
+                        page.classList.add('active');
+                    } else {
+                        page.classList.remove('active');
+                    }
+                });
+
+                document.querySelectorAll('#sidebarNav a').forEach(link => {
+                    if (link.dataset.page === pageId) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+                
+                if (sidebar.classList.contains('open')) { // Close mobile sidebar on nav
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+
+                // Call page-specific load functions
+                if (pageId === 'dashboard-content' && isLoggedIn) renderDashboard();
+                if (pageId === 'spin-wheel-content' && isLoggedIn) initSpinWheelPage();
+                if (pageId === 'slot-machine-content' && isLoggedIn) initSlotMachinePage();
+                if (pageId === 'scratch-cards-content' && isLoggedIn) initScratchCardPage();
+                if (pageId === 'daily-bonus-content' && isLoggedIn) initDailyBonusPage();
+                if (pageId === 'refer-earn-content' && isLoggedIn) initReferEarnPage();
+                if (pageId === 'redeem-content' && isLoggedIn) initRedeemPage();
+                if (pageId === 'history-content' && isLoggedIn) renderHistoryPage();
+                if (pageId === 'profile-content' && isLoggedIn) renderProfilePage();
+
+                if (!skipHistory && window.location.hash !== `#${pageId.replace('-content','')}`) {
+                    window.location.hash = pageId.replace('-content','');
+                }
+                window.scrollTo(0,0); // Scroll to top on page change
+            }
+
+            function handleHashChange() {
+                const hash = window.location.hash.substring(1);
+                let targetPageId = isLoggedIn ? 'dashboard-content' : 'login-content';
+
+                if (hash) {
+                    const potentialPageId = `${hash}-content`;
+                    if (document.getElementById(potentialPageId)) {
+                        // Check if page requires login
+                        const requiresLogin = !['login-content', 'register-content'].includes(potentialPageId);
+                        if (requiresLogin && !isLoggedIn) {
+                            targetPageId = 'login-content'; // Redirect to login
+                             if(window.location.hash !== '#login') window.location.hash = 'login'; // update hash to login
+                        } else if (!requiresLogin && isLoggedIn) {
+                            targetPageId = 'dashboard-content'; // If on login/register but logged in, go to dash
+                             if(window.location.hash !== '#dashboard') window.location.hash = 'dashboard';
+                        }
+                        else {
+                            targetPageId = potentialPageId;
+                        }
+                    }
+                }
+                showPage(targetPageId, true); // true to skip history update as hashchange triggered it
+            }
+
+
+            // --- Authentication Logic ---
+            function handleLogin(e) {
+                e.preventDefault();
+                setButtonLoading(loginButton, true);
+                hideMessage(loginErrorMsg);
+
+                const username = loginUsername.value.trim();
+                const password = loginPassword.value;
+
+                setTimeout(() => { // Simulate API call
+                    if (users[username] && users[username].password === password) {
+                        isLoggedIn = true;
+                        currentUser = { username: username, data: users[username].data };
+                        addActivity(`Logged in successfully. Welcome back!`, 'login');
+                        updateUIBasedOnLoginState();
+                        showPage('dashboard-content');
+                        loginForm.reset();
+                    } else {
+                        showMessage(loginErrorMsg, 'Invalid username or password.');
+                    }
+                    setButtonLoading(loginButton, false);
+                }, 1000);
+            }
+
+            function handleRegister(e) {
+                e.preventDefault();
+                setButtonLoading(registerButton, true);
+                hideMessage(registerErrorMsg);
+                hideMessage(registerSuccessMsg);
+
+                const username = registerUsername.value.trim();
+                const password = registerPassword.value;
+                const confirmPassword = registerConfirmPassword.value;
+
+                if (password !== confirmPassword) {
+                    showMessage(registerErrorMsg, 'Passwords do not match.');
+                    setButtonLoading(registerButton, false);
+                    return;
+                }
+                if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+                     showMessage(registerErrorMsg, 'Invalid username format.');
+                     setButtonLoading(registerButton, false);
+                     return;
+                }
+                if (password.length < 6) {
+                    showMessage(registerErrorMsg, 'Password must be at least 6 characters.');
+                    setButtonLoading(registerButton, false);
+                    return;
+                }
+
+
+                setTimeout(() => { // Simulate API call
+                    if (users[username]) {
+                        showMessage(registerErrorMsg, 'Username already exists.');
+                    } else {
+                        users[username] = {
+                            password: password,
+                            data: { // Default user data
+                                points: 100, // Welcome bonus
+                                spinsLeft: 5,
+                                slotTokens: 10,
+                                scratchCardsLeft: 3,
+                                lastDailyBonusClaimed: null,
+                                referralCode: generateRandomString(8),
+                                memberSince: new Date().toISOString().split('T')[0],
+                                activityLog: []
+                            }
+                        };
+                        saveUsers();
+                        addActivity(`Account registered successfully. Welcome!`, 'register', 100); // Use users[username] for activity before login
+                        showMessage(registerSuccessMsg, 'Registration successful! Please login.');
+                        registerForm.reset();
+                        // Optionally auto-login or redirect to login
+                        // showPage('login-content'); 
+                    }
+                    setButtonLoading(registerButton, false);
+                }, 1000);
+            }
+
+            function handleLogout() {
+                addActivity(`Logged out.`, 'logout');
+                isLoggedIn = false;
+                currentUser = null;
+                updateUIBasedOnLoginState();
+                showPage('login-content');
+            }
+            
+            function updateUserData(username, newData) {
+                if (users[username]) {
+                    users[username].data = { ...users[username].data, ...newData };
+                    if (currentUser && currentUser.username === username) {
+                        currentUser.data = users[username].data;
+                    }
+                    saveUsers();
+                    updateUserStatsDisplay(); // Refresh UI stats
+                }
+            }
+
+
+            // --- Game Logic & Page Initializers ---
+
+            // Spin Wheel
+            function initSpinWheelPage() {
+                if (!currentUser) return;
+                generateSpinWheelSegments();
+                spinWheelSpinsLeft.textContent = currentUser.data.spinsLeft;
+                spinNowButton.disabled = isSpinningWheel || currentUser.data.spinsLeft <= 0;
+                spinResult.textContent = 'Ready to spin?';
+            }
+
+            function generateSpinWheelSegments() {
+                spinWheel.innerHTML = ''; // Clear previous segments
+                const numSegments = spinWheelSegmentsData.length;
+                const anglePerSegment = 360 / numSegments;
+
+                spinWheelSegmentsData.forEach((segment, index) => {
+                    const segmentDiv = document.createElement('div');
+                    segmentDiv.classList.add('wheel-segment');
+                    segmentDiv.style.backgroundColor = segment.color;
+                    segmentDiv.style.transform = `rotate(${index * anglePerSegment}deg) skewY(${90 - anglePerSegment}deg)`;
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = segment.label;
+                    // Adjust text orientation if skewed too much
+                    textSpan.style.transform = `skewY(-${90 - anglePerSegment}deg) rotate(${(anglePerSegment / 2)}deg)`;
+                    textSpan.style.position = 'absolute';
+                    textSpan.style.right = '10px'; // Adjust as needed
+                    textSpan.style.top = '50%';
+                    textSpan.style.transformOrigin = 'center';
+                     // Complex text adjustments might be needed here based on final look
+                    if (anglePerSegment < 30) textSpan.style.fontSize = '0.7rem';
+
+
+                    segmentDiv.appendChild(textSpan);
+                    spinWheel.appendChild(segmentDiv);
+                });
+            }
+
+            function spinTheWheel() {
+                if (isSpinningWheel || currentUser.data.spinsLeft <= 0) return;
+
+                isSpinningWheel = true;
+                setButtonLoading(spinNowButton, true);
+                spinNowButton.disabled = true;
+                spinResult.textContent = "Spinning...";
+                
+                currentUser.data.spinsLeft--;
+                updateUserData(currentUser.username, { spinsLeft: currentUser.data.spinsLeft });
+                spinWheelSpinsLeft.textContent = currentUser.data.spinsLeft;
+
+                const numSegments = spinWheelSegmentsData.length;
+                const anglePerSegment = 360 / numSegments;
+                const randomIndex = Math.floor(Math.random() * numSegments);
+                const winningSegment = spinWheelSegmentsData[randomIndex];
+                
+                // Calculate rotation: Base rotations + random segment position
+                // Pointer is on the left (0 degrees points right, so 90 deg points up, 180 left)
+                // Target rotation makes the start of the winning segment align with the pointer (e.g. at 180 deg)
+                // The pointer is fixed at the 9 o'clock position (180 degrees from the rightmost point of the circle).
+                // A segment's angle is its starting angle from the 3 o'clock position, rotating counter-clockwise.
+                // To align segment `i` (0-indexed) with the 9 o'clock pointer:
+                // The wheel needs to rotate such that the start of segment `i` is at 180 degrees.
+                // If segment `i` starts at `i * anglePerSegment`, we want this to effectively be 180.
+                // So, `currentRotation - (i * anglePerSegment + anglePerSegment / 2)` should result in 180 degrees at the pointer.
+                // Final rotation = (total degrees for full spins) - (angle to middle of target segment) + (pointer offset)
+                const randomOffsetInSegment = Math.random() * anglePerSegment * 0.8 + anglePerSegment * 0.1; // land not exactly on edge
+                const targetAngle = (randomIndex * anglePerSegment) + randomOffsetInSegment; 
+                const fullRotations = 5 * 360; // 5 full spins
+                
+                // The wheel visually rotates clockwise (positive transform).
+                // The pointer is at the left (180 deg position if 0 is right).
+                // We want the winning segment to stop under this pointer.
+                // Each segment's "center" is at `index * anglePerSegment + anglePerSegment / 2`.
+                // The rotation should be `fullRotations - (targetSegmentCenterAngle - pointerAngleOffset)`
+                // Let's define 0 degrees for segments at the 3 o'clock position (right). Pointer is at 9 o'clock (180 deg).
+                // The target rotation should be such that after rotation, the middle of the chosen segment is at 180 deg.
+                // rotation = full_rotations + (180 - middle_of_segment_angle)
+                // middle_of_segment_angle = (randomIndex * anglePerSegment) + (anglePerSegment / 2)
+                const rotation = fullRotations + (180 - ( (randomIndex * anglePerSegment) + (anglePerSegment / 2) ) );
+
+
+                spinWheel.style.transform = `rotate(${rotation}deg)`;
+
+                setTimeout(() => {
+                    isSpinningWheel = false;
+                    setButtonLoading(spinNowButton, false);
+                    spinNowButton.disabled = currentUser.data.spinsLeft <= 0;
+
+                    if (winningSegment.value === "bonus_spin") {
+                        spinResult.textContent = "Congratulations! You won a Bonus Spin!";
+                        currentUser.data.spinsLeft++;
+                        updateUserData(currentUser.username, { spinsLeft: currentUser.data.spinsLeft });
+                        addActivity("Won a Bonus Spin from the wheel.", 'spin_bonus', 0, "Bonus Spin");
+                    } else if (winningSegment.value > 0) {
+                        spinResult.textContent = `You won ${winningSegment.label}!`;
+                        currentUser.data.points += winningSegment.value;
+                        updateUserData(currentUser.username, { points: currentUser.data.points });
+                        addActivity(`Won ${winningSegment.value} points from the wheel.`, 'spin_win', winningSegment.value, winningSegment.label);
+                    } else {
+                        spinResult.textContent = `${winningSegment.label}. Better luck next time!`;
+                        addActivity(`Wheel spin resulted in '${winningSegment.label}'.`, 'spin_loss', 0, winningSegment.label);
+                    }
+                    updateUserStatsDisplay();
+                }, 5500); // Match CSS transition duration + buffer
+            }
+
+
+            // Slot Machine
+            function initSlotMachinePage() {
+                if (!currentUser) return;
+                slotMachineTokens.textContent = currentUser.data.slotTokens;
+                playSlotsButton.disabled = isSpinningSlots || currentUser.data.slotTokens <= 0;
+                slotsResult.textContent = 'Ready to play?';
+                // Initialize reels with random symbols
+                [reel1, reel2, reel3].forEach(setupReel);
+            }
+            
+            function setupReel(reelElement, initialOffset = true) {
+                reelElement.innerHTML = ''; // Clear previous
+                const fragment = document.createDocumentFragment();
+                // Create a long strip of symbols (e.g., 3 times the symbol list for smooth looping illusion)
+                for (let i = 0; i < slotSymbols.length * 3; i++) {
+                    const symbolDiv = document.createElement('div');
+                    symbolDiv.classList.add('reel-symbol');
+                    symbolDiv.textContent = slotSymbols[i % slotSymbols.length];
+                    fragment.appendChild(symbolDiv);
+                }
+                reelElement.appendChild(fragment);
+                 if(initialOffset) {
+                    reelElement.style.transition = 'none'; // No animation for initial setup
+                    // Set to a random starting position (ensure 3 symbols are visible)
+                    const randomSymbolIndex = Math.floor(Math.random() * slotSymbols.length);
+                    reelElement.style.top = `-${randomSymbolIndex * 70}px`; // 70px is symbol height
+                }
+            }
+
+            async function spinReel(reelElement, duration, targetSymbolIndex) {
+                return new Promise(resolve => {
+                    const symbolHeight = 70;
+                    const totalSymbolsInStrip = reelElement.children.length;
+                    // targetPosition should make targetSymbolIndex be in the middle visible slot
+                    // The visible window for a reel is 210px high, showing 3 symbols. Middle is index 1.
+                    // If reel strip starts at top=0, symbol at index `i` has its top at `i * symbolHeight`.
+                    // We want targetSymbolIndex (from original slotSymbols) to be the middle.
+                    // The strip has slotSymbols.length * 3 symbols.
+                    // Let's say targetSymbolIndex is '⭐' (index 4 in slotSymbols).
+                    // We want it to appear at the *second* physical slot of the reel strip
+                    // to be in the middle of the 3 visible symbols.
+                    // The top of the strip should be -(index_of_symbol_above_target * symbolHeight)
+                    // The symbol we want in the middle (index 1 of visible) would be slotSymbols[targetSymbolIndex]
+                    // The symbol above it (index 0 of visible) would be slotSymbols[(targetSymbolIndex - 1 + slotSymbols.length) % slotSymbols.length]
+                    // The actual index in the long strip needs to be found. Let's use the second set of symbols for the target.
+                    const actualTargetIndexInStrip = slotSymbols.length + targetSymbolIndex;
+                    const finalTopPosition = -((actualTargetIndexInStrip - 1) * symbolHeight); // -1 to make it middle
+
+                    // Animation: quickly scroll through symbols then slow down to target
+                    reelElement.style.transition = `top ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
+
+                    // To make it look like it's spinning, set 'top' to a large negative value
+                    // representing many symbols passing by. Then set to final position.
+                    // The number of symbols in one full cycle of the visual strip.
+                    const cycleHeight = slotSymbols.length * symbolHeight;
+                    // Move it down by several cycles plus the target position
+                    reelElement.style.top = `-${(3 * cycleHeight) + ((actualTargetIndexInStrip -1) * symbolHeight)}px`;
+
+
+                    setTimeout(() => {
+                        // To make it appear to "settle" correctly without jumping after a long spin,
+                        // we can snap it to the equivalent position within the first cycle
+                        // This assumes the long strip is for visual effect of continuous scroll.
+                        reelElement.style.transition = 'top 0.3s ease-out'; //Settle transition
+                        reelElement.style.top = `${finalTopPosition}px`;
+                        setTimeout(resolve, 300); // Wait for settle transition
+                    }, duration - 300); // Start settling before full duration
+                });
+            }
+
+
+            function playSlots() {
+                if (isSpinningSlots || currentUser.data.slotTokens < 1) return;
+
+                isSpinningSlots = true;
+                setButtonLoading(playSlotsButton, true);
+                playSlotsButton.disabled = true;
+                slotsResult.textContent = "Spinning reels...";
+
+                currentUser.data.slotTokens--;
+                updateUserData(currentUser.username, { slotTokens: currentUser.data.slotTokens });
+                slotMachineTokens.textContent = currentUser.data.slotTokens;
+                addActivity("Played Slot Machine (1 token spent).", 'slot_play', 0, "1 Token");
+
+
+                const reelResults = [
+                    Math.floor(Math.random() * slotSymbols.length),
+                    Math.floor(Math.random() * slotSymbols.length),
+                    Math.floor(Math.random() * slotSymbols.length)
+                ];
+                
+                const spinDurations = [1000, 1500, 2000]; // Staggered stop times
+
+                Promise.all([
+                    spinReel(reel1, spinDurations[0], reelResults[0]),
+                    spinReel(reel2, spinDurations[1], reelResults[1]),
+                    spinReel(reel3, spinDurations[2], reelResults[2])
+                ]).then(() => {
+                    isSpinningSlots = false;
+                    setButtonLoading(playSlotsButton, false);
+                    playSlotsButton.disabled = currentUser.data.slotTokens < 1;
+
+                    const s1 = slotSymbols[reelResults[0]];
+                    const s2 = slotSymbols[reelResults[1]];
+                    const s3 = slotSymbols[reelResults[2]];
+                    
+                    let winAmount = 0;
+                    let winMessage = `Reels: ${s1} ${s2} ${s3}. No Win.`;
+
+                    if (s1 === s2 && s2 === s3) { // Three of a kind
+                        if (s1 === '７') winAmount = 500;
+                        else if (s1 === '⭐') winAmount = 200;
+                        else if (s1 === '🍉') winAmount = 100;
+                        else if (s1 === '🔔') winAmount = 75;
+                        else winAmount = 50; // Cherries, Lemons, Oranges
+                        winMessage = `JACKPOT! ${s1} ${s2} ${s3}! You won ${winAmount} points!`;
+                    } else if (s1 === s2 || s2 === s3 || s1 === s3) { // Two of a kind (simple rule)
+                        // Prioritize middle match if any
+                        if (s1 === s2) {
+                             if (s1 === '７') winAmount = 20; else if (s1 === '⭐') winAmount = 15; else winAmount = 5;
+                        } else if (s2 === s3) {
+                             if (s2 === '７') winAmount = 20; else if (s2 === '⭐') winAmount = 15; else winAmount = 5;
+                        } else { // s1 === s3
+                             if (s1 === '７') winAmount = 10; else if (s1 === '⭐') winAmount = 8; else winAmount = 3;
+                        }
+                        winMessage = `Match! ${s1} ${s2} ${s3}. You won ${winAmount} points.`;
+                    }
+                    
+                    if (winAmount > 0) {
+                        slotsResult.textContent = winMessage;
+                        currentUser.data.points += winAmount;
+                        updateUserData(currentUser.username, { points: currentUser.data.points });
+                        addActivity(`Won ${winAmount} points from Slot Machine. Reels: ${s1}${s2}${s3}`, 'slot_win', winAmount, `${s1}${s2}${s3}`);
+                    } else {
+                        slotsResult.textContent = winMessage;
+                        addActivity(`Slot Machine result: ${s1}${s2}${s3}. No win.`, 'slot_loss', 0, `${s1}${s2}${s3}`);
+                    }
+                    updateUserStatsDisplay();
+                });
+            }
+
+
+            // Scratch Cards
+            function initScratchCardPage() {
+                if (!currentUser) return;
+                scratchCardsLeft.textContent = currentUser.data.scratchCardsLeft;
+                scratchCardButton.disabled = isScratchingCard || currentUser.data.scratchCardsLeft <= 0;
+                scratchCardArea.style.pointerEvents = currentUser.data.scratchCardsLeft <= 0 || isScratchingCard ? 'none' : 'auto';
+                resetScratchCard();
+                scratchStatus.textContent = currentUser.data.scratchCardsLeft > 0 ? "Click the card or button to scratch!" : "No scratch cards left today.";
+            }
+
+            function resetScratchCard() {
+                scratchCardOverlay.classList.remove('scratched');
+                scratchCardOverlay.style.opacity = '1';
+                scratchCardResultDisplay.textContent = '?';
+                scratchCardResultDisplay.style.color = 'var(--primary-color)';
+            }
+
+            function revealScratchCard() {
+                if (isScratchingCard || currentUser.data.scratchCardsLeft <= 0) return;
+                if (scratchCardOverlay.classList.contains('scratched')) return; // Already revealed
+
+                isScratchingCard = true;
+                setButtonLoading(scratchCardButton, true);
+                scratchCardButton.disabled = true;
+                scratchCardArea.style.pointerEvents = 'none';
+                scratchStatus.textContent = "Scratching...";
+                
+                currentUser.data.scratchCardsLeft--;
+                updateUserData(currentUser.username, { scratchCardsLeft: currentUser.data.scratchCardsLeft });
+                scratchCardsLeft.textContent = currentUser.data.scratchCardsLeft;
+
+                // Simulate scratching
+                scratchCardOverlay.style.opacity = '0.5'; // Partial reveal during "scratch"
+
+                setTimeout(() => {
+                    const prizes = [0, 5, 10, 25, 50, 100]; // 0 for "No Win"
+                    const prizeWon = prizes[Math.floor(Math.random() * prizes.length)];
+                    
+                    scratchCardOverlay.classList.add('scratched'); // Fully reveal
+                    scratchCardOverlay.style.opacity = '0';
+
+                    if (prizeWon > 0) {
+                        scratchCardResultDisplay.textContent = `${prizeWon} Pts!`;
+                        scratchCardResultDisplay.style.color = 'var(--success-color)';
+                        scratchStatus.textContent = `Congratulations! You won ${prizeWon} points!`;
+                        currentUser.data.points += prizeWon;
+                        updateUserData(currentUser.username, { points: currentUser.data.points });
+                        addActivity(`Won ${prizeWon} points from a scratch card.`, 'scratch_win', prizeWon, `${prizeWon} Pts`);
+                    } else {
+                        scratchCardResultDisplay.textContent = 'No Win';
+                        scratchCardResultDisplay.style.color = 'var(--error-color)';
+                        scratchStatus.textContent = 'Better luck next time!';
+                        addActivity(`Scratch card resulted in no win.`, 'scratch_loss', 0, "No Win");
+                    }
+
+                    updateUserStatsDisplay();
+                    isScratchingCard = false;
+                    setButtonLoading(scratchCardButton, false);
+                    // Button remains disabled if no cards left, userStatDisplay handles it.
+                     if (currentUser.data.scratchCardsLeft > 0) {
+                        scratchCardButton.disabled = false;
+                        scratchCardArea.style.pointerEvents = 'auto';
+                        // Offer to reset for next scratch after a delay
+                        setTimeout(() => {
+                             if (currentUser.data.scratchCardsLeft > 0) {
+                                resetScratchCard();
+                                scratchStatus.textContent = "Ready for another scratch!";
+                             } else {
+                                scratchStatus.textContent = "All scratch cards used for today.";
+                             }
+                        }, 2000);
+                    } else {
+                        scratchStatus.textContent = "All scratch cards used for today.";
+                    }
+
+                }, 1000); // Scratching duration
+            }
+
+            // Daily Bonus
+            function initDailyBonusPage() {
+                if (!currentUser) return;
+                const today = new Date().toISOString().split('T')[0];
+                if (currentUser.data.lastDailyBonusClaimed === today) {
+                    dailyBonusMessage.textContent = "You've already claimed today's bonus.";
+                    claimDailyBonusButton.textContent = "Claimed Today";
+                    claimDailyBonusButton.disabled = true;
+                    dailyBonusStatus.textContent = `Come back tomorrow for another bonus!`;
+                } else {
+                    dailyBonusMessage.textContent = "You are eligible for today's daily bonus!";
+                    claimDailyBonusButton.textContent = "Claim Today's Bonus";
+                    claimDailyBonusButton.disabled = false;
+                    setButtonLoading(claimDailyBonusButton, false); // Ensure spinner is off
+                    dailyBonusStatus.textContent = `Claim your bonus of 25 points and 1 spin!`;
+                }
+            }
+
+            function claimDailyBonus() {
+                if (!currentUser) return;
+                setButtonLoading(claimDailyBonusButton, true);
+                const today = new Date().toISOString().split('T')[0];
+
+                if (currentUser.data.lastDailyBonusClaimed === today) {
+                    dailyBonusStatus.textContent = "Bonus already claimed today.";
+                    setButtonLoading(claimDailyBonusButton, false);
+                    return;
+                }
+                
+                setTimeout(() => { // Simulate claim
+                    const bonusPoints = 25;
+                    const bonusSpins = 1;
+                    currentUser.data.points += bonusPoints;
+                    currentUser.data.spinsLeft += bonusSpins;
+                    currentUser.data.lastDailyBonusClaimed = today;
+                    updateUserData(currentUser.username, currentUser.data);
+                    
+                    dailyBonusStatus.textContent = `Successfully claimed ${bonusPoints} points and ${bonusSpins} spin!`;
+                    addActivity(`Claimed daily bonus: ${bonusPoints} pts, ${bonusSpins} spin.`, 'daily_bonus', bonusPoints);
+                    initDailyBonusPage(); // Re-render to update button state
+                    updateUserStatsDisplay(); // Update global stats
+                    setButtonLoading(claimDailyBonusButton, false);
+                }, 1000);
+            }
+
+            // Refer & Earn
+            function initReferEarnPage() {
+                if (!currentUser) return;
+                referralCodeDisplay.textContent = currentUser.data.referralCode;
+                copyStatus.textContent = '';
+            }
+
+            function copyReferralCode() {
+                if (!currentUser) return;
+                navigator.clipboard.writeText(currentUser.data.referralCode).then(() => {
+                    copyStatus.textContent = 'Referral code copied to clipboard!';
+                    copyStatus.style.color = 'var(--success-color)';
+                    setTimeout(() => { copyStatus.textContent = ''; }, 3000);
+                }).catch(err => {
+                    copyStatus.textContent = 'Failed to copy code.';
+                    copyStatus.style.color = 'var(--error-color)';
+                    console.error('Failed to copy: ', err);
+                });
+            }
+
+            // Redeem Points
+            function initRedeemPage() {
+                if (!currentUser) return;
+                redeemPointsBalance.textContent = `${currentUser.data.points.toLocaleString()} pts`;
+                withdrawForm.reset();
+                hideMessage(withdrawErrorMsg);
+                hideMessage(withdrawSuccessMsg);
+                setButtonLoading(requestWithdrawalButton, false);
+            }
+            
+            function handleWithdrawalRequest(e) {
+                e.preventDefault();
+                if (!currentUser) return;
+
+                setButtonLoading(requestWithdrawalButton, true);
+                hideMessage(withdrawErrorMsg);
+                hideMessage(withdrawSuccessMsg);
+
+                const amount = parseInt(withdrawAmountInput.value);
+                const method = withdrawMethodSelect.value;
+                const details = withdrawDetailsInput.value.trim();
+
+                if (isNaN(amount) || amount < 100) {
+                    showMessage(withdrawErrorMsg, "Minimum withdrawal amount is 100 points.");
+                    setButtonLoading(requestWithdrawalButton, false);
+                    return;
+                }
+                if (amount > currentUser.data.points) {
+                    showMessage(withdrawErrorMsg, "Insufficient points balance.");
+                    setButtonLoading(requestWithdrawalButton, false);
+                    return;
+                }
+                if (!method) {
+                    showMessage(withdrawErrorMsg, "Please select a withdrawal method.");
+                    setButtonLoading(requestWithdrawalButton, false);
+                    return;
+                }
+                if (!details) {
+                    showMessage(withdrawErrorMsg, "Please provide withdrawal details.");
+                    setButtonLoading(requestWithdrawalButton, false);
+                    return;
+                }
+
+                setTimeout(() => { // Simulate request processing
+                    currentUser.data.points -= amount;
+                    updateUserData(currentUser.username, { points: currentUser.data.points });
+                    
+                    showMessage(withdrawSuccessMsg, `Withdrawal request for ${amount} points via ${method} submitted successfully (Simulated).`, false);
+                    addActivity(`Withdrawal request: ${amount} pts via ${method}.`, 'redeem_request', -amount, method);
+                    
+                    withdrawForm.reset();
+                    redeemPointsBalance.textContent = `${currentUser.data.points.toLocaleString()} pts`; // Update balance display on page
+                    updateUserStatsDisplay(); // Update global stats
+                    setButtonLoading(requestWithdrawalButton, false);
+                }, 1500);
+            }
+
+            // History Page
+            function renderHistoryPage() {
+                if (!currentUser) {
+                     fullActivityList.innerHTML = '';
+                     noHistoryMessage.style.display = 'block';
+                     return;
+                }
+                const activities = currentUser.data.activityLog;
+                if (activities.length === 0) {
+                    fullActivityList.innerHTML = '';
+                    noHistoryMessage.style.display = 'block';
+                    return;
+                }
+                noHistoryMessage.style.display = 'none';
+                fullActivityList.innerHTML = activities.map(activity => `
+                    <li class="activity-item">
+                        <div class="icon-circle" style="background-color: ${getActivityIconColor(activity.type)};">
+                            <i class="fas ${getActivityIcon(activity.type)}"></i>
+                        </div>
+                        <div class="activity-details">
+                            <p>${activity.description}</p>
+                            <span class="timestamp">${formatTimeAgo(activity.timestamp)}</span>
+                        </div>
+                    </li>
+                `).join('');
+            }
+
+            // Profile Page
+            function renderProfilePage() {
+                if (!currentUser) return;
+                profileUsername.textContent = currentUser.username;
+                profileMemberSince.textContent = new Date(currentUser.data.memberSince).toLocaleDateString();
+            }
+
+            // --- Event Listeners ---
+            menuToggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+
+            sidebarNav.addEventListener('click', (e) => {
+                const link = e.target.closest('a');
+                if (link && link.dataset.page) {
+                    e.preventDefault();
+                    showPage(link.dataset.page);
+                } else if (link && link.id === 'logoutLink') {
+                    e.preventDefault();
+                    handleLogout();
+                }
+            });
+            
+            // Auth forms
+            if (loginForm) loginForm.addEventListener('submit', handleLogin);
+            if (registerForm) registerForm.addEventListener('submit', handleRegister);
+
+            // Game buttons
+            if (spinNowButton) spinNowButton.addEventListener('click', spinTheWheel);
+            if (playSlotsButton) playSlotsButton.addEventListener('click', playSlots);
+            if (scratchCardButton) scratchCardButton.addEventListener('click', revealScratchCard);
+            if (scratchCardArea) scratchCardArea.addEventListener('click', revealScratchCard); // Click on card itself
+
+            // Other features
+            if (claimDailyBonusButton) claimDailyBonusButton.addEventListener('click', claimDailyBonus);
+            if (copyReferralCodeButton) copyReferralCodeButton.addEventListener('click', copyReferralCode);
+            if (withdrawForm) withdrawForm.addEventListener('submit', handleWithdrawalRequest);
+
+            // --- Initialization ---
+            function initApp() {
+                // Check if user was previously logged in (e.g. from localStorage, not implemented here for full session)
+                // For this demo, start logged out.
+                const storedUser = localStorage.getItem('spinEarnCurrentUser'); // Simple persistence for demo
+                if (storedUser) {
+                    const tempUser = JSON.parse(storedUser);
+                    if (users[tempUser.username]) { // Verify user still exists in our 'db'
+                        isLoggedIn = true;
+                        currentUser = tempUser;
+                    } else {
+                        localStorage.removeItem('spinEarnCurrentUser');
+                    }
+                }
+
+                updateUIBasedOnLoginState();
+                handleHashChange(); // Handle initial page load based on hash
+                window.addEventListener('hashchange', handleHashChange);
+            }
+
+            initApp();
+        });
+    </script>
+</body>
+</html>
